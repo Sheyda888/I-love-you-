@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Love Advent Calendar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont,"Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #ffdee9 0, #b5fffc 40%, #fdfbfb 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      direction: ltr;
+      color: #222;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 900px;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.9);
+      border-radius: 24px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.12);
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .title {
+      text-align: center;
+      margin-bottom: 0.5rem;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 0.95rem;
+      color: #555;
+      margin-bottom: 1.5rem;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .day {
+      position: relative;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #ff9a9e, #fecfef);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.4rem 0.5rem;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      text-align: center;
+      user-select: none;
+    }
+
+    .day span { pointer-events: none; }
+
+    .day::after {
+      content: "♡";
+      position: absolute;
+      left: 8px;
+      top: 6px;
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+
+    .day:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 16px 35px rgba(0,0,0,0.22);
+      background: linear-gradient(135deg, #ff758c, #ff7eb3);
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 0.75rem;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 1rem;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal-content {
+      background: #fff;
+      border-radius: 22px;
+      max-width: 600px;
+      width: 100%;
+      padding: 1.2rem 1.5rem 1.4rem;
+      position: relative;
+      max-height: 90vh;
+      overflow: auto;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      border: none;
+      background: transparent;
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+
+    .modal-title {
+      text-align: center;
+      margin: 0.2rem 0 0.6rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #c2185b;
+    }
+
+    .modal-img {
+      width: 100%;
+      border-radius: 18px;
+      margin-bottom: 0.8rem;
+      object-fit: contain;
+      max-height: 70vh;
+      background: #f5f5f5;
+    }
+
+    .modal-text {
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: #444;
+      white-space: pre-line;
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      .card { padding: 1.1rem; }
+      .title { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <div class="title">Love Advent Calendar – December 2 to 23 💌</div>
+      <div class="subtitle">
+        Every day, tap the number to open a little surprise – one picture and one message just for you ✨
+      </div>
+
+      <div class="calendar" id="calendar"></div>
+
+      <div class="footer-note">
+        Made with so much love for you 💖
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal-content">
+      <button class="close-btn" id="closeModal" aria-label="Close">✕</button>
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <img src="" alt="" class="modal-img" id="modalImage" />
+      <div class="modal-text" id="modalText"></div>
+    </div>
+  </div>
+
+  <script>
+    // If you ever want days to unlock only on their real date, change this to true.
+    const lockByDate = false;
+    const calendarYear = 2025; // used only if lockByDate === true
+
+    // 👉 Replace IMAGE_URL_DAY_X with your real image links
+    const daysData = {
+      2: {
+        image: "IMAGE_URL_DAY_2",
+        text: "My dear Samir,\nI want you to know how proud I am of you.\nI love you so much, and I truly appreciate all your hard work."
+      },
+      3: {
+        image: "IMAGE_URL_DAY_3",
+        text: "My love,\nyour smile is the light of my life.\nPromise me you will always stay happy and keep smiling."
+      },
+      4: {
+        image: "IMAGE_URL_DAY_4",
+        text: "You can\u2019t imagine how deeply I love you, my darling.\nWhen I look at you, you can see my whole heart shining in my eyes."
+      },
+      5: {
+        image: "IMAGE_URL_DAY_5",
+        text: "Samir,\nI love this calendar only because of your birthday in it\u2026\nthe day the world received my breath, my life, you."
+      },
+      6: {
+        image: "IMAGE_URL_DAY_6",
+        text: "For me, you are as colorful and delicious as this picture I love.\nThis is the best way I can describe my love for you\u2026\nsweet, warm, and irresistible."
+      },
+      7: {
+        image: "IMAGE_URL_DAY_7",
+        text: "You are so precious to me.\nI know every little detail about you, and I notice even the tiniest change\u2026\nbut no matter what, you are always beautiful in my eyes\u2014the beauty of my soul."
+      },
+      8: {
+        image: "IMAGE_URL_DAY_8",
+        text: "Your presence in my life is like a tree full of flowers and blossoms\u2026\nand your absence feels like a dried, lifeless tree.\nThat\u2019s how deeply you affect my world."
+      },
+      9: {
+        image: "IMAGE_URL_DAY_9",
+        text: "Every part of me is filled with love for you.\nI can\u2019t see anything but you,\nmy man\u2026 my everything."
+      },
+      10: {
+        image: "IMAGE_URL_DAY_10",
+        text: "I keep looking for the perfect day in the calendar just to congratulate you\u2026\nbut the truth is, every day is just an excuse to show you how much I love you."
+      },
+      11: {
+        image: "IMAGE_URL_DAY_11",
+        text: "Do you know what it feels like to see you in my dreams at night?\nDo you know, my beautiful Samir\u2026\nit feels like coming home."
+      },
+      12: {
+        image: "IMAGE_URL_DAY_12",
+        text: "My biggest motivation every day is saying good morning and good night to you.\nYou are the only \"S\" in my life\u2026\nmy Samir."
+      },
+      13: {
+        image: "IMAGE_URL_DAY_13",
+        text: "Have you ever looked at the moon and been reminded of someone?\nBecause in this life\u2026\nyou are my moon."
+      },
+      14: {
+        image: "IMAGE_URL_DAY_14",
+        text: "Sometimes I take screenshots just to send them to you later\u2026\nbut then I look at your face in the picture,\nand my heart completely melts.\nWhy are you so photogenic and so beautiful, my love?"
+      },
+      15: {
+        image: "IMAGE_URL_DAY_15",
+        text: "Samir, it makes me so happy that I can read your feelings through your eyes.\nI love you, my dear."
+      },
+      16: {
+        image: "IMAGE_URL_DAY_16",
+        text: "Samir, thank you for working so hard for our life.\nI see your effort, and I appreciate you more than you know."
+      },
+      17: {
+        image: "IMAGE_URL_DAY_17",
+        text: "I love sharing every part of my life with you, Samir.\nEvery little news, every moment \u2014 you\u2019re the first person I want to tell."
+      },
+      18: {
+        image: "IMAGE_URL_DAY_18",
+        text: "Sometimes I wish I could just bite your cheeks a little and hold you tight in my arms.\nI miss you in the sweetest way, Samir."
+      },
+      19: {
+        image: "IMAGE_URL_DAY_19",
+        text: "Samir, I swear I just want to live inside that adorable dimple of yours.\nMy heart belongs there \u2014 in your smile, my love."
+      },
+      20: {
+        image: "IMAGE_URL_DAY_20",
+        text: "Samir, I love every part of your existence.\nI\u2019m proud of you \u2014 of the man you are, and the man you\u2019re becoming.\nMy heart belongs to you, completely."
+      },
+      21: {
+        image: "IMAGE_URL_DAY_21",
+        text: "Samir, to put it simply\u2026\nyou are different from everyone else.\nIn the most beautiful way.\nI love you, my dear."
+      },
+      22: {
+        image: "IMAGE_URL_DAY_22",
+        text: "Samir, I want you to know that I carry you with me everywhere.\nIn every place, every moment, you are in my mind and in my heart.\nWhoever loves me\u2026 loves you too \u2014 because you live inside my heart."
+      },
+      23: {
+        image: "IMAGE_URL_DAY_23",
+        text: "Samir, at the end of everything\u2026\nall that truly matters is this:\nI love you.\nThat\u2019s it.\nThat\u2019s everything."
+      }
+    };
+
+    const calendarEl = document.getElementById("calendar");
+    const modal = document.getElementById("modal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalImage = document.getElementById("modalImage");
+    const modalText = document.getElementById("modalText");
+    const closeModalBtn = document.getElementById("closeModal");
+
+    function isDayLocked(dayNumber) {
+      if (!lockByDate) return false;
+      const today = new Date();
+      const target = new Date(calendarYear, 11, dayNumber); // month 11 = December
+      return today < target;
+    }
+
+    function openDay(dayNumber) {
+      if (isDayLocked(dayNumber)) return;
+      const data = daysData[dayNumber];
+      if (!data) return;
+
+      modalTitle.textContent = `Day ${dayNumber} – December`;
+      modalText.textContent = data.text || "";
+
+      if (data.image && data.image.trim() !== "") {
+        modalImage.src = data.image;
+        modalImage.style.display = "block";
+      } else {
+        modalImage.style.display = "none";
+      }
+
+      modal.classList.add("active");
+    }
+
+    function buildCalendar() {
+      for (let day = 2; day <= 23; day++) {
+        const div = document.createElement("div");
+        div.className = "day";
+        if (isDayLocked(day)) div.classList.add("locked");
+        div.innerHTML = `<span>${day}</span>`;
+        div.addEventListener("click", () => openDay(day));
+        calendarEl.appendChild(div);
+      }
+    }
+
+    buildCalendar();
+
+    closeModalBtn.addEventListener("click", () => {
+      modal.classList.remove("active");
+    });
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) modal.classList.remove("active");
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") modal.classList.remove("active");
+    });
+  </script>
+</body>
+</html>
