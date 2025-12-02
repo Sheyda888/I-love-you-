@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8" />
+  <title>تقویم عاشقانه من برای تو</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont,"Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #ffdee9 0, #b5fffc 40%, #fdfbfb 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      direction: rtl;
+      color: #222;
+    }
+    .wrapper { width: 100%; max-width: 900px; padding: 1.5rem; }
+    .card {
+      background: rgba(255,255,255,0.9);
+      border-radius: 24px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.12);
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+    }
+    .title { text-align: center; margin-bottom: .5rem; font-size: 1.4rem; font-weight: 700; }
+    .subtitle { text-align: center; font-size: .95rem; color: #555; margin-bottom: 1.5rem; }
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px,1fr));
+      gap: .75rem;
+    }
+    .day {
+      position: relative;
+      border-radius: 18px;
+      background: linear-gradient(135deg,#ff9a9e,#fecfef);
+      color:#fff;
+      font-weight:700;
+      font-size:1.1rem;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:1.4rem .5rem;
+      cursor:pointer;
+      box-shadow:0 10px 25px rgba(0,0,0,.18);
+      transition:transform .15s, box-shadow .15s, background .15s;
+      text-align:center;
+      user-select:none;
+    }
+    .day span { pointer-events:none; }
+    .day::after {
+      content:"♡";
+      position:absolute;
+      left:8px; top:6px;
+      font-size:.8rem; opacity:.8;
+    }
+    .day:hover {
+      transform:translateY(-3px) scale(1.02);
+      box-shadow:0 16px 35px rgba(0,0,0,.22);
+      background:linear-gradient(135deg,#ff758c,#ff7eb3);
+    }
+    .footer-note { text-align:center; font-size:.8rem; color:#666; margin-top:.75rem; }
+    .modal-overlay {
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.55);
+      display:none;
+      align-items:center; justify-content:center;
+      z-index:999; padding:1rem;
+    }
+    .modal-overlay.active { display:flex; }
+    .modal-content {
+      background:#fff;
+      border-radius:22px;
+      max-width:500px; width:100%;
+      padding:1.2rem 1.5rem 1.4rem;
+      position:relative; max-height:90vh; overflow:auto;
+    }
+    .close-btn {
+      position:absolute; top:8px; left:10px;
+      border:none; background:transparent;
+      font-size:1.4rem; cursor:pointer;
+    }
+    .modal-title {
+      text-align:center; margin:.2rem 0 .6rem;
+      font-size:1.1rem; font-weight:700; color:#c2185b;
+    }
+    .modal-img {
+      width:100%; border-radius:18px;
+      margin-bottom:.8rem; object-fit:cover; max-height:260px;
+    }
+    .modal-text { font-size:.95rem; line-height:1.8; color:#444; white-space:pre-line; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <div class="title">تقویم عاشقانه‌ات از ۲ تا ۲۳ دسامبر 💌</div>
+      <div class="subtitle">
+        هر روز روی عددش کلیک کن تا یک عکس و یک جمله فقط برای خودت باز بشه ✨
+      </div>
+      <div class="calendar" id="calendar"></div>
+      <div class="footer-note">ساخته شده با کلی عشق 💖</div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal">
+    <div class="modal-content">
+      <button class="close-btn" id="closeModal" aria-label="بستن">✕</button>
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <img src="" alt="" class="modal-img" id="modalImage" />
+      <div class="modal-text" id="modalText"></div>
+    </div>
+  </div>
+
+  <script>
+    const daysData = {
+      2: { image:"https://via.placeholder.com/500x300?text=Day+2", text:"متن روز دوم ❤️" },
+      3: { image:"https://via.placeholder.com/500x300?text=Day+3", text:"متن روز سوم ❤️" },
+      4: { image:"https://via.placeholder.com/500x300?text=Day+4", text:"متن روز چهارم ❤️" },
+      5: { image:"https://via.placeholder.com/500x300?text=Day+5", text:"متن روز پنجم ❤️" },
+      6: { image:"https://via.placeholder.com/500x300?text=Day+6", text:"متن روز ششم ❤️" },
+      7: { image:"https://via.placeholder.com/500x300?text=Day+7", text:"متن روز هفتم ❤️" },
+      8: { image:"https://via.placeholder.com/500x300?text=Day+8", text:"متن روز هشتم ❤️" },
+      9: { image:"https://via.placeholder.com/500x300?text=Day+9", text:"متن روز نهم ❤️" },
+      10:{ image:"https://via.placeholder.com/500x300?text=Day+10", text:"متن روز دهم ❤️" },
+      11:{ image:"https://via.placeholder.com/500x300?text=Day+11", text:"متن روز یازدهم ❤️" },
+      12:{ image:"https://via.placeholder.com/500x300?text=Day+12", text:"متن روز دوازدهم ❤️" },
+      13:{ image:"https://via.placeholder.com/500x300?text=Day+13", text:"متن روز سیزدهم ❤️" },
+      14:{ image:"https://via.placeholder.com/500x300?text=Day+14", text:"متن روز چهاردهم ❤️" },
+      15:{ image:"https://via.placeholder.com/500x300?text=Day+15", text:"متن روز پانزدهم ❤️" },
+      16:{ image:"https://via.placeholder.com/500x300?text=Day+16", text:"متن روز شانزدهم ❤️" },
+      17:{ image:"https://via.placeholder.com/500x300?text=Day+17", text:"متن روز هفدهم ❤️" },
+      18:{ image:"https://via.placeholder.com/500x300?text=Day+18", text:"متن روز هجدهم ❤️" },
+      19:{ image:"https://via.placeholder.com/500x300?text=Day+19", text:"متن روز نوزدهم ❤️" },
+      20:{ image:"https://via.placeholder.com/500x300?text=Day+20", text:"متن روز بیستم ❤️" },
+      21:{ image:"https://via.placeholder.com/500x300?text=Day+21", text:"متن روز بیست‌ویکم ❤️" },
+      22:{ image:"https://via.placeholder.com/500x300?text=Day+22", text:"متن روز بیست‌ودوم ❤️" },
+      23:{ image:"https://via.placeholder.com/500x300?text=Day+23", text:"متن روز بیست‌وسوم ❤️" }
+    };
+
+    const calendarEl = document.getElementById("calendar");
+    const modal = document.getElementById("modal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalImage = document.getElementById("modalImage");
+    const modalText = document.getElementById("modalText");
+    const closeModalBtn = document.getElementById("closeModal");
+
+    function openDay(dayNumber) {
+      const data = daysData[dayNumber];
+      if (!data) return;
+      modalTitle.textContent = `روز ${dayNumber} دسامبر`;
+      modalImage.src = data.image;
+      modalText.textContent = data.text;
+      modal.classList.add("active");
+    }
+
+    function buildCalendar() {
+      for (let day = 2; day <= 23; day++) {
+        const div = document.createElement("div");
+        div.className = "day";
+        div.innerHTML = `<span>${day}</span>`;
+        div.addEventListener("click", () => openDay(day));
+        calendarEl.appendChild(div);
+      }
+    }
+
+    buildCalendar();
+
+    closeModalBtn.addEventListener("click", () => modal.classList.remove("active"));
+    modal.addEventListener("click", e => { if (e.target === modal) modal.classList.remove("active"); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") modal.classList.remove("active"); });
+  </script>
+</body>
+</html>
